@@ -1,7 +1,11 @@
-% Steps:
-% 1. Process data - convert strings to numerics (if possible), otherwise ignore, then normalize data
-% 2. Run logistic regression (as the final outcome is boolean (survived or not). Fminunc!
-% 3. Split training data into train + cross validation to improve algo
+%{ 
+Steps:
+1. Process data - copy values of continuous features; for discrete features (like gender, class) create appropriate number of additional features
+2. Normalize data
+2. Run logistic regression as the final outcome is boolean (survived or not). Fminunc!
+3. Split training data into train + cross validation to improve algo
+4. Run diagnostics to see bias-variance tradeoffs
+%}
 
 pkg load io;
 
