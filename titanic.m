@@ -178,13 +178,40 @@ endfunction
 
 [X,y] = parseinputs('train.csv', 0);
 
+% Split training & validation set
+m = length(X);
+trainLength = round(m*0.7); %Split between training & cross validation data
+
+Xtrain = X(1:trainLength, :);
+ytrain = y(1:trainLength, :);
+Xcv = X(trainLength+1:end, :);
+ycv = y(trainLength+1:end, :);
+
 % Set Options
 options = optimset('GradObj', 'on', 'MaxIter', 4000);
 
-initial_theta = zeros(size(X, 2), 1);
+initial_theta = zeros(size(Xtrain, 2), 1);
 lambda = 0;
 
 % Optimize
 [theta, J, exit_flag] = ...
-	fminunc(@(t)(costFunctionReg(t, X, y, lambda)), initial_theta, options);
+	fminunc(@(t)(costFunctionReg(t, Xtrain, ytrain, lambda)), initial_theta, options);
+
+fprintf ('Error in training set: %f\n', J);
+fprintf ('Accuracy in training set: %f\n', sum(sigmoid(Xtrain*theta)>0.5 == ytrain)/length(ytrain));
+fprintf ('Error in cross validation set: %f\n', costFunctionReg(theta, Xcv, ycv, lambda)(1));
+fprintf ('Accuracy in training set: %f\n', sum(sigmoid(Xcv*theta)>0.5 == ycv)/length(ycv));
+
+
+% Now print output of test.csv in expected format
+[Xtest ytest] = parseinputs('test.csv', 1);
+ytest = sigmoid(Xtest*theta) > 0.5;
+passengerIdTestSet = [892:1309]'; %Hard coding test.csv passenger id
+
+%Append timestamp to create new output fileeach time. 
+outputFileName = strcat('output', num2str(round(time)), '.csv');
+fid = fopen(outputFileName, 'w');
+fprintf (fid, 'PassengerId,Survived\n');
+dlmwrite (fid, [passengerIdTestSet ytest]);
+fclose(fid);
 
