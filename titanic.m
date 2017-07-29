@@ -142,21 +142,49 @@ function [X,y] = parseinputs (filename, isTestData)
             X(i,42) = 1;
         endif
     endfor
+
+
+    % Normalize continuous values
+    % PassengerID, Age, Sisb, Parch, tktNumber, CabinNumber
+    for i = [1 8 9 10 12 13 14:39]
+        if max(X(:,i))==min(X(:,i))
+            X(:,i) = (X(:,i) - mean(X(:,i)));
+        else
+            X(:,i) = (X(:,i) - mean(X(:,i)))/(max(X(:,i))-min(X(:,i)));
+        endif
+    endfor
 endfunction
 
 function g = sigmoid(z)
     g = 1 ./ (1 + exp (-1*z));
 endfunction
 
-function [J, grad] = costFunction (theta, X, y)
-    m = length (y); 
+function [J, grad] = costFunctionReg(theta, X, y, lambda)
+    m = length(y); % number of training examples
+    
     J = 0;
     grad = zeros(size(theta));
-    J = (1/m) *sum( -y'*log(sigmoid(X*theta)) -(1-y)'*log(1-sigmoid(X*theta)) ) ;
-    grad = (1/m) * X' * (sigmoid(X*theta) - y);
+    
+    n = size(theta);
+    temp = eye(n, n);
+    temp(1,1) = 0; % to eliminate theta(0) in calculation of grad
+    
+    J = (1/m) * sum ( -y'*log(sigmoid(X*theta)) - (1-y)'*log(1-sigmoid(X*theta))) + ...
+        (lambda*0.5/m) * sum (theta(2:n) .^ 2);
+    grad = (1/m) * X' * (sigmoid(X*theta) - y) + (lambda/m)*temp*theta;
+
 endfunction
 
 
 [X,y] = parseinputs('train.csv', 0);
 
+% Set Options
+options = optimset('GradObj', 'on', 'MaxIter', 4000);
+
+initial_theta = zeros(size(X, 2), 1);
+lambda = 0;
+
+% Optimize
+[theta, J, exit_flag] = ...
+	fminunc(@(t)(costFunctionReg(t, X, y, lambda)), initial_theta, options);
 
