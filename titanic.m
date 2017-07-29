@@ -43,7 +43,7 @@ function cabinNumbers = getCabinNumbers (str)
     % [1 0 2 1 0 0 ... 0]
     % i.e., number of rooms in each letter. Though we are loosing info about room number. 
 
-    cabinNumbers = zeros(1, 26);
+    cabinNumbers = zeros(1, 7);
     if str == 0
         return;
     endif
@@ -91,8 +91,8 @@ function [X,y] = parseinputs (filename, isTestData)
     
     for i = 1:m
     
-        % Column PassengerId - copy as it is
-        X(i,1) = cell2mat_special(inputs(i,1));
+        % Column PassengerId - ignore it
+        X(i,1) = 1; 
         
         % Column Pclass 
         cls = cell2mat_special(inputs(i,2));
@@ -128,31 +128,35 @@ function [X,y] = parseinputs (filename, isTestData)
         % Column Fare - copy as it is
         X(i,13) = cell2mat_special(inputs(i,9));
 
-        % Column Cabin - since columns start from A to G letters, keeping 26 features for it. Each value will be room number
-        X(i,[14:39]) = getCabinNumbers(cell2mat_special(inputs(i,10)));
+        % Column Cabin - since columns start from A to G letters, keeping 7 features for it. Each value will be room number
+        X(i,[14:20]) = getCabinNumbers(cell2mat_special(inputs(i,10)));
 
         % Column Embarked - 1 for Cherbourg, 2 for Queenstown, 3 for Southampton
-        X(i, [40 41 42]) = 0;
+        X(i, [21 22 23]) = 0;
         e = cell2mat_special(inputs(i,11));
         if strncmp (e, "C", 1)
-            X(i,40) = 1;
+            X(i,21) = 1;
         elseif strncmp (e, "Q", 1)
-            X(i,41) = 1;
+            X(i,22) = 1;
         elseif strncmp (e, "S", 1)
-            X(i,42) = 1;
+            X(i,23) = 1;
         endif
     endfor
 
 
     % Normalize continuous values
     % PassengerID, Age, Sisb, Parch, tktNumber, CabinNumber
-    for i = [1 8 9 10 12 13 14:39]
+    for i = [8 9 10 12 13 14:20]
         if max(X(:,i))==min(X(:,i))
             X(:,i) = (X(:,i) - mean(X(:,i)));
         else
             X(:,i) = (X(:,i) - mean(X(:,i)))/(max(X(:,i))-min(X(:,i)));
         endif
     endfor
+
+
+    %Introduce higher powers of all features
+    X = [X X.^2 X.^3];
 endfunction
 
 function g = sigmoid(z)
@@ -191,7 +195,7 @@ ycv = y(trainLength+1:end, :);
 options = optimset('GradObj', 'on', 'MaxIter', 4000);
 
 initial_theta = zeros(size(Xtrain, 2), 1);
-lambda = 0;
+lambda = 0.01;
 
 % Optimize
 [theta, J, exit_flag] = ...
